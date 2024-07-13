@@ -1,6 +1,6 @@
 import { debounceTime, fromEvent, map } from "rxjs";
 import { ajax } from "rxjs/ajax";
-import { pluck, tap } from 'rxjs/operators';
+import { mergeAll, pluck, tap } from 'rxjs/operators';
 
 // Referencias
 const body = document.querySelector('body');
@@ -14,18 +14,8 @@ const input$ = fromEvent<KeyboardEvent>( textInput, 'keyup' );
 
 input$.pipe(
     debounceTime( 500 ),
-    map( event => {
-        const texto = event.target['value'];
-        return ajax.getJSON(
-            `https://api.github.com/users/${ texto }`
-        )
-    })
-).subscribe( resp => {
-    resp.pipe(
-        map( val => {
-            return val['url'];
-        })
-        /* pluck('url') */
-    )
-    .subscribe( console.log )
-} )
+    map( event => event.target['value']),
+    map( texto => {  return ajax.getJSON( `https://api.github.com/search/users?q=${ texto }` )}),
+    mergeAll(),
+    pluck('items')
+).subscribe( resp => console.log(resp) );
